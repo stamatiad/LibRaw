@@ -607,6 +607,7 @@ void LibRaw::canon_sraw_load_raw()
 {
   struct jhead jh;
   short *rp = 0, (*ip)[4];
+  double fp[4], frgb[4];
   int jwide, slice, scol, ecol, row, col, jrow = 0, jcol = 0, pix[3], c;
   int v[3] = {0, 0, 0}, ver, hue;
   int saved_w = width, saved_h = height;
@@ -745,11 +746,50 @@ void LibRaw::canon_sraw_load_raw()
         {
           if (unique_id < CanonID_EOS_5D_Mark_II)
             rp[0] -= 512;
+          /*
+          // SSS Export raw values, without RGB conversion:
+          pix[0] = rp[0];
+          pix[1] = rp[1];
+          pix[2] = rp[2];
+          */
+
+          // These values are OK. They do NOT need any more processing. Why though?
+          //Cb -= (C_max + C_min) / 2
+          //rp[1] -= 16384;
+          //Cr -= (C_max + C_min) / 2
+          //rp[2] -= 16384;
+
+          //Y *= 1 / (Y_max - Y_min)
+          fp[0] = rp[0] * 0.0000305185;
+          //Cb *= 1 / (C_max - C_min)
+          fp[1] = rp[1] * 0.0000305185;
+          //Cr *= 1 / (C_max - C_min)
+          fp[2] = rp[2] * 0.0000305185;
+
+          //R = Y + (2 - 2 * Kr) * Cr
+          frgb[0] = (fp[0] + 1.5748 * fp[2]);
+          //B = Y + (2 - 2 * Kb) * Cb
+          frgb[2] = (fp[0] + 1.8556 * fp[1]);
+          //G = (Y - Kr * R - Kb * B) / (1 - Kr - Kb)
+          frgb[1] = ((fp[0] - 0.2126 * frgb[0] - 0.0722 * frgb[2]) / 0.7152);
+
+          pix[0] = frgb[0] * ((1 << 15)-1);
+          pix[1] = frgb[1] * ((1 << 15)-1);
+          pix[2] = frgb[2] * ((1 << 15)-1);
+
+          rp[0] = CLIP15(pix[0]);
+          rp[1] = CLIP15(pix[1]);
+          rp[2] = CLIP15(pix[2]);
+
+          /*
           pix[0] = rp[0] + rp[2];
           pix[2] = rp[0] + rp[1];
           pix[1] = rp[0] + ((-778 * rp[1] - (rp[2] << 11)) >> 12);
+          */
         }
-        FORC3 rp[c] = CLIP15(pix[c] * sraw_mul[c] >> 10);
+        // SSS Remove the WB, since the exported values now are in YCbCr:
+        // TODO: Where I get the WB values from? Which tag?
+        //FORC3 rp[c] = CLIP15(pix[c] * sraw_mul[c] >> 10);
       }
   }
   catch (...)
