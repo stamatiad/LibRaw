@@ -693,3 +693,6 @@ endif(LIBRAW_INSTALL)
 
 
 
+add_executable(sample_dcraw ${LIBRAW_PATH}/samples/simple_dcraw.cpp)
+target_link_libraries(sample_dcraw PRIVATE libraw::libraw)
+target_link_libraries(sample_dcraw PRIVATE ${MATH_LIBRARY})
