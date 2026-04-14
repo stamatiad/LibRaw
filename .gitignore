@@ -1,0 +1,20 @@
+build/
+x32/
+x64/
+Debug/
+Release/
+/*.vcxproj
+/*.vcxproj.filters
+/*.vcxproj.user
+
+*.bak
+*.dir/
+
+# Cmake artifacts:
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+cmake_uninstall.cmake
+/*.pc
+/*.pc.in
